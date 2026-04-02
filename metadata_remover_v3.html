@@ -1,0 +1,482 @@
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#0a0a0a;--surface:#111;--surface2:#161616;--border:#222;--border2:#2a2a2a;
+    --text:#f0f0f0;--muted:#555;--muted2:#888;--accent:#c8f060;--accent2:#60f0c8;
+    --warn:#f0a060;--danger:#f06060;
+    --font:'Syne',sans-serif;--mono:'DM Mono',monospace;
+  }
+  body{background:var(--bg);color:var(--text);font-family:var(--font);padding:2rem 1.5rem}
+  h1{font-size:2rem;font-weight:700;letter-spacing:-0.03em;margin-bottom:.2rem}
+  h1 span{color:var(--accent)}
+  .sub{font-size:.78rem;color:var(--muted2);margin-bottom:2rem;font-family:var(--mono)}
+  .drop-zone{border:1.5px dashed var(--border2);border-radius:12px;padding:2.2rem 2rem;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;background:var(--surface);position:relative}
+  .drop-zone:hover,.drop-zone.drag{border-color:var(--accent);background:#0f1209}
+  .drop-icon{font-size:1.8rem;margin-bottom:.5rem;display:block}
+  .drop-title{font-size:.95rem;font-weight:600;margin-bottom:.2rem}
+  .drop-hint{font-size:.7rem;color:var(--muted2);font-family:var(--mono)}
+  #file-input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+  .formats{display:flex;gap:.35rem;flex-wrap:wrap;justify-content:center;margin-top:.9rem}
+  .tag{background:var(--surface2);border:0.5px solid var(--border2);border-radius:4px;padding:2px 7px;font-size:.65rem;font-family:var(--mono);color:var(--muted2)}
+  .file-card{background:var(--surface);border:0.5px solid var(--border2);border-radius:12px;margin-top:.9rem;overflow:hidden}
+  .file-header{display:flex;align-items:center;gap:.7rem;padding:.8rem 1rem;cursor:pointer;transition:background .15s;user-select:none}
+  .file-header:hover{background:var(--surface2)}
+  .file-icon{width:32px;height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.62rem;font-family:var(--mono);font-weight:500;flex-shrink:0}
+  .icon-img{background:#171d0a;color:var(--accent)}
+  .icon-vid{background:#091515;color:var(--accent2)}
+  .file-name{font-size:.82rem;font-weight:600;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .file-size{font-size:.68rem;color:var(--muted2);font-family:var(--mono);flex-shrink:0}
+  .chevron{font-size:.65rem;color:var(--muted);transition:transform .2s;flex-shrink:0;margin-left:.2rem}
+  .file-body{display:none;border-top:0.5px solid var(--border)}
+  .file-body.open{display:block}
+
+  /* Sensitive summary cards */
+  .sensitive-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.5rem;padding:.9rem 1rem;border-bottom:0.5px solid var(--border)}
+  .sens-card{background:#160b04;border:0.5px solid #3a1e08;border-radius:8px;padding:.6rem .8rem}
+  .sens-card-label{font-size:.6rem;font-family:var(--mono);color:#a06030;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem}
+  .sens-card-val{font-size:.78rem;font-family:var(--mono);color:var(--warn);font-weight:500;word-break:break-all}
+  .sens-card-val.none{color:var(--muted);font-size:.72rem}
+  .sens-card.found{border-color:#5a2e08}
+
+  .meta-section{padding:.8rem 1rem}
+  .meta-title{font-size:.65rem;font-family:var(--mono);color:var(--muted2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.55rem;display:flex;align-items:center;justify-content:space-between}
+  .sel-all{font-size:.65rem;font-family:var(--mono);color:var(--accent);cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+  .field-row{display:flex;align-items:center;gap:.5rem;padding:4px 0;border-bottom:0.5px solid #1a1a1a}
+  .field-row:last-child{border-bottom:none}
+  .field-row.is-sensitive{background:#100804;margin:0 -.8rem;padding:4px .8rem}
+  .field-check{width:13px;height:13px;accent-color:var(--accent);flex-shrink:0;cursor:pointer}
+  .field-label{font-size:.7rem;font-family:var(--mono);color:var(--muted2);flex:1;min-width:0}
+  .field-label.sensitive{color:#c07040}
+  .field-val{font-size:.7rem;font-family:var(--mono);color:var(--text);text-align:right;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .field-val.sensitive{color:var(--warn)}
+  .sens-dot{width:5px;height:5px;background:var(--warn);border-radius:50%;flex-shrink:0}
+
+  .action-bar{display:flex;align-items:center;gap:.6rem;padding:.7rem 1rem;border-top:0.5px solid var(--border);background:var(--surface2);flex-wrap:wrap}
+  .btn{padding:.45rem 1rem;border-radius:7px;font-family:var(--font);font-size:.78rem;font-weight:600;cursor:pointer;border:none;transition:all .15s}
+  .btn-primary{background:var(--accent);color:#0a0a0a}
+  .btn-primary:hover{background:#d6ff70}
+  .btn-primary:disabled{opacity:.35;cursor:not-allowed}
+  .btn-ghost{background:transparent;color:var(--muted2);border:0.5px solid var(--border2);font-size:.72rem}
+  .btn-ghost:hover{color:var(--text);border-color:#444}
+  .status-badge{font-size:.65rem;font-family:var(--mono);padding:2px 7px;border-radius:4px;flex-shrink:0}
+  .badge-scanning{background:#1a1a0a;color:#f0d060}
+  .badge-sensitive{background:#1a0e05;color:var(--warn)}
+  .badge-clean{background:#0f1a0a;color:var(--accent)}
+  .badge-none{background:#111;color:var(--muted2)}
+  .dl-link{display:inline-flex;align-items:center;gap:.3rem;background:var(--surface2);border:0.5px solid var(--border2);border-radius:6px;padding:.3rem .7rem;font-family:var(--mono);font-size:.68rem;color:var(--accent);cursor:pointer;text-decoration:none;transition:background .15s}
+  .dl-link:hover{background:#13180a}
+  .no-meta{font-size:.72rem;font-family:var(--mono);color:var(--muted2);padding:.5rem 0}
+  .loading-meta{font-size:.7rem;font-family:var(--mono);color:var(--muted2);padding:.8rem 1rem;animation:pulse 1s infinite}
+  .map-link{font-size:.65rem;font-family:var(--mono);color:var(--accent2);text-decoration:none;margin-left:.4rem}
+  .map-link:hover{text-decoration:underline}
+  @keyframes pulse{0%,100%{opacity:.3}50%{opacity:1}}
+</style>
+
+<div style="max-width:600px;margin:0 auto">
+  <h1>Strip<span>.</span>clean</h1>
+  <p class="sub">// full metadata inspector &amp; remover — 100% in-browser, nothing uploaded</p>
+
+  <div class="drop-zone" id="drop">
+    <input type="file" id="file-input" multiple accept="image/*,video/*">
+    <span class="drop-icon">⬡</span>
+    <div class="drop-title">Drop files here or click to browse</div>
+    <div class="drop-hint">Reads GPS, device info, timestamps &amp; all EXIF fields</div>
+    <div class="formats">
+      <span class="tag">JPG</span><span class="tag">PNG</span><span class="tag">WEBP</span><span class="tag">GIF</span><span class="tag">TIFF</span><span class="tag">MP4</span><span class="tag">MOV</span><span class="tag">AVI</span><span class="tag">WEBM</span>
+    </div>
+  </div>
+  <div id="cards-container"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.min.js"></script>
+<script>
+const drop=document.getElementById('drop');
+const fileInput=document.getElementById('file-input');
+const container=document.getElementById('cards-container');
+let queue=[];
+
+drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('drag')});
+drop.addEventListener('dragleave',()=>drop.classList.remove('drag'));
+drop.addEventListener('drop',e=>{e.preventDefault();drop.classList.remove('drag');addFiles(e.dataTransfer.files)});
+fileInput.addEventListener('change',()=>{addFiles(fileInput.files);fileInput.value=''});
+
+function ext(n){return n.split('.').pop().toUpperCase()}
+function isImg(f){return f.type.startsWith('image/')}
+function fmtSize(b){return b<1048576?(b/1024).toFixed(1)+'KB':(b/1048576).toFixed(1)+'MB'}
+
+// All EXIF tags grouped by sensitivity
+const SENSITIVE_GROUPS={
+  'GPS Location':['GPSLatitude','GPSLongitude','GPSLatitudeRef','GPSLongitudeRef','GPSAltitude','GPSAltitudeRef','GPSImgDirection','GPSImgDirectionRef','GPSSpeed','GPSSpeedRef','GPSTrack','GPSDestLatitude','GPSDestLongitude','GPSDateStamp','GPSTimeStamp','GPSProcessingMethod','GPSAreaInformation','GPSMeasureMode','GPSDOP'],
+  'Device & Camera':['Make','Model','LensMake','LensModel','BodySerialNumber','SerialNumber','LensSerialNumber','CameraSerialNumber','InternalSerialNumber','CameraOwnerName','OwnerName'],
+  'Software & OS':['Software','ProcessingSoftware','FirmwareVersion'],
+  'Author & Copyright':['Artist','Copyright','XPAuthor','XPComment','XPKeywords','XPSubject','XPTitle','ImageDescription','UserComment'],
+  'Timestamps':['DateTime','DateTimeOriginal','DateTimeDigitized','SubSecTime','SubSecTimeOriginal','SubSecTimeDigitized','GPSDateStamp','GPSTimeStamp','CreateDate','ModifyDate'],
+};
+const ALL_SENSITIVE=Object.values(SENSITIVE_GROUPS).flat();
+function getSensitiveGroup(key){for(const[g,keys]of Object.entries(SENSITIVE_GROUPS)){if(keys.some(k=>k.toLowerCase()===key.toLowerCase()))return g;}return null;}
+function isSensitive(key){return ALL_SENSITIVE.some(k=>k.toLowerCase()===key.toLowerCase());}
+
+function addFiles(list){
+  for(const f of list){
+    if(!f.type.startsWith('image/')&&!f.type.startsWith('video/')) continue;
+    if(queue.find(q=>q.file.name===f.name&&q.file.size===f.size)) continue;
+    const item={file:f,fields:[],status:'scanning',id:'f'+Date.now()+Math.random().toString(36).slice(2)};
+    queue.push(item);
+    renderCard(item);
+    scanMeta(item);
+  }
+}
+
+async function scanMeta(item){
+  if(isImg(item.file)) await scanImageMeta(item);
+  else await scanVideoMeta(item);
+  updateCard(item);
+}
+
+function dmsToDecimal(vals,ref){
+  if(!vals||!vals[0]) return null;
+  try{
+    const d=vals[0].numerator/vals[0].denominator;
+    const m=vals[1].numerator/vals[1].denominator;
+    const s=vals[2].numerator/vals[2].denominator;
+    let dec=d+m/60+s/3600;
+    if(ref==='S'||ref==='W') dec=-dec;
+    return dec.toFixed(6);
+  }catch(e){return null;}
+}
+
+function formatVal(key,val){
+  if(val===undefined||val===null) return null;
+  if(val instanceof Uint8Array||val instanceof Int8Array||val instanceof ArrayBuffer) return '[binary]';
+  if(Array.isArray(val)){
+    if(val[0]&&typeof val[0]==='object'&&'numerator'in val[0]){
+      return val.map(v=>+(v.numerator/v.denominator).toFixed(5)).join(', ');
+    }
+    return val.slice(0,5).join(', ')+(val.length>5?'…':'');
+  }
+  if(typeof val==='object'&&'numerator'in val) return +(val.numerator/val.denominator).toFixed(5);
+  const s=String(val).trim();
+  return s.length>0?s.substring(0,160):null;
+}
+
+function scanImageMeta(item){
+  return new Promise(resolve=>{
+    EXIF.getData(item.file,function(){
+      const all=EXIF.getAllTags(this);
+      const fields=[];
+      // Process all tags
+      for(const[key,rawVal] of Object.entries(all)){
+        if(key==='undefined'||key==='MakerNote') continue;
+        const val=formatVal(key,rawVal);
+        if(val===null||val==='') continue;
+        const sensitive=isSensitive(key);
+        const group=getSensitiveGroup(key)||'Other';
+        fields.push({key,val,sensitive,group,checked:true,rawVal});
+      }
+
+      // Compute GPS decimal if available
+      const lat=dmsToDecimal(all.GPSLatitude,all.GPSLatitudeRef);
+      const lng=dmsToDecimal(all.GPSLongitude,all.GPSLongitudeRef);
+      if(lat&&lng){
+        item.gpsDecimal={lat,lng};
+        // Replace or augment GPS fields with readable coords
+        const latField=fields.find(f=>f.key==='GPSLatitude');
+        const lngField=fields.find(f=>f.key==='GPSLongitude');
+        if(latField) latField.val=lat+'° '+(all.GPSLatitudeRef||'');
+        if(lngField) lngField.val=lng+'° '+(all.GPSLongitudeRef||'');
+      }
+
+      item.fields=fields.sort((a,b)=>(b.sensitive?1:0)-(a.sensitive?1:0));
+      item.status=fields.length?'has-meta':'clean';
+      resolve();
+    });
+  });
+}
+
+async function scanVideoMeta(item){
+  const fields=[];
+  fields.push({key:'FileName',val:item.file.name,sensitive:false,group:'File',checked:false});
+  fields.push({key:'FileSize',val:fmtSize(item.file.size),sensitive:false,group:'File',checked:false});
+  fields.push({key:'MIMEType',val:item.file.type||'unknown',sensitive:false,group:'File',checked:false});
+  fields.push({key:'LastModified',val:new Date(item.file.lastModified).toISOString(),sensitive:true,group:'Timestamps',checked:true});
+
+  if(item.file.name.toLowerCase().match(/\.(mp4|mov|m4v)$/)){
+    try{
+      const slice=await item.file.slice(0,Math.min(item.file.size,1024*1024)).arrayBuffer();
+      const arr=new Uint8Array(slice);
+      const boxMeta=extractMp4Meta(arr);
+      for(const[k,v] of Object.entries(boxMeta)){
+        const sensitive=isSensitive(k)||(k==='Location');
+        fields.push({key:k,val:String(v).substring(0,160),sensitive,group:getSensitiveGroup(k)||'Video',checked:sensitive});
+      }
+      if(boxMeta['Location']) item.gpsRaw=boxMeta['Location'];
+    }catch(e){}
+  }
+  item.fields=fields.sort((a,b)=>(b.sensitive?1:0)-(a.sensitive?1:0));
+  item.status='has-meta';
+}
+
+function readBoxString(arr,start,end){
+  let s='';
+  for(let i=start;i<Math.min(end,start+300);i++){
+    const c=arr[i];
+    if(c>=32&&c<127) s+=String.fromCharCode(c);
+  }
+  return s.trim();
+}
+
+function extractMp4Meta(arr){
+  const result={};
+  const dv=new DataView(arr.buffer);
+  function walk(offset,end){
+    while(offset+8<=end){
+      let size=dv.getUint32(offset,false);
+      if(size===1&&offset+16<=end){size=Number(BigInt(dv.getBigUint64(offset+8,false)));offset+=8;}
+      if(size<8||offset+size>end) break;
+      const type=String.fromCharCode(arr[offset+4],arr[offset+5],arr[offset+6],arr[offset+7]);
+      const inner=offset+8;const innerEnd=offset+size;
+      if(['moov','udta','ilst','trak','mdia','minf','stbl'].includes(type)){walk(inner,innerEnd);}
+      else if(type==='meta'){walk(inner+4,innerEnd);}
+      else if(type==='©nam'){result['Title']=readBoxString(arr,inner+8,innerEnd);}
+      else if(type==='©ART'||type==='aART'){result['Artist']=readBoxString(arr,inner+8,innerEnd);}
+      else if(type==='©alb'){result['Album']=readBoxString(arr,inner+8,innerEnd);}
+      else if(type==='©day'||type==='©yrrc'){result['DateTime']=readBoxString(arr,inner+8,innerEnd);}
+      else if(type==='©cmt'){result['Comment']=readBoxString(arr,inner+8,innerEnd);}
+      else if(type==='©too'){result['Software']=readBoxString(arr,inner+8,innerEnd);}
+      else if(type==='©gen'){result['Genre']=readBoxString(arr,inner+8,innerEnd);}
+      else if(type==='cprt'){result['Copyright']=readBoxString(arr,inner,innerEnd);}
+      else if(type==='©xyz'||type==='loci'){result['Location']=readBoxString(arr,inner,innerEnd)||'[GPS present]';}
+      else if(type==='©mak'){result['Make']=readBoxString(arr,inner+8,innerEnd);}
+      else if(type==='©mod'){result['Model']=readBoxString(arr,inner+8,innerEnd);}
+      else if(type==='©swr'){result['Software']=readBoxString(arr,inner+8,innerEnd);}
+      else if(type==='tkhd'){
+        try{
+          const ver=arr[inner];const base=ver===1?inner+8:inner+4;
+          const ct=ver===1?Number(BigInt(dv.getBigUint64(inner+4,false))):dv.getUint32(inner+4,false);
+          const mt=ver===1?Number(BigInt(dv.getBigUint64(inner+12,false))):dv.getUint32(inner+8,false);
+          const epoch=new Date('1904-01-01').getTime();
+          if(ct>0){result['CreateDate']=new Date(epoch+ct*1000).toISOString();}
+          if(mt>0){result['ModifyDate']=new Date(epoch+mt*1000).toISOString();}
+        }catch(e){}
+      }
+      offset+=size;
+    }
+  }
+  try{walk(0,arr.length);}catch(e){}
+  return result;
+}
+
+function renderCard(item){
+  const card=document.createElement('div');
+  card.className='file-card';card.id=item.id;
+  const img=isImg(item.file);
+  card.innerHTML=`
+    <div class="file-header" onclick="toggleCard('${item.id}')">
+      <div class="file-icon ${img?'icon-img':'icon-vid'}">${ext(item.file.name)}</div>
+      <div class="file-name">${item.file.name}</div>
+      <div class="file-size">${fmtSize(item.file.size)}</div>
+      <span class="status-badge badge-scanning" id="badge-${item.id}">scanning…</span>
+      <span class="chevron" id="chev-${item.id}">▶</span>
+    </div>
+    <div class="file-body" id="body-${item.id}">
+      <div class="loading-meta">Reading metadata…</div>
+    </div>`;
+  container.appendChild(card);
+}
+
+function toggleCard(id){
+  const body=document.getElementById('body-'+id);
+  const chev=document.getElementById('chev-'+id);
+  const open=body.classList.toggle('open');
+  chev.style.transform=open?'rotate(90deg)':'';
+}
+
+function updateCard(item){
+  const badge=document.getElementById('badge-'+item.id);
+  const body=document.getElementById('body-'+item.id);
+  const sensFields=item.fields.filter(f=>f.sensitive);
+  const totalFields=item.fields.length;
+
+  if(totalFields===0){
+    badge.className='status-badge badge-none';badge.textContent='no metadata';
+    body.innerHTML=`<div class="meta-section"><div class="no-meta">No readable metadata found.</div></div>`;
+    return;
+  }
+  if(sensFields.length>0){
+    badge.className='status-badge badge-sensitive';
+    badge.textContent=`${sensFields.length} sensitive`;
+  } else {
+    badge.className='status-badge badge-none';badge.textContent=`${totalFields} fields`;
+  }
+
+  // Build sensitive summary section
+  const gpsLat=item.fields.find(f=>f.key==='GPSLatitude');
+  const gpsLng=item.fields.find(f=>f.key==='GPSLongitude');
+  const make=item.fields.find(f=>f.key==='Make');
+  const model=item.fields.find(f=>f.key==='Model');
+  const serial=item.fields.find(f=>['BodySerialNumber','SerialNumber','CameraSerialNumber'].includes(f.key));
+  const dt=item.fields.find(f=>['DateTimeOriginal','DateTime','CreateDate'].includes(f.key));
+  const software=item.fields.find(f=>f.key==='Software');
+  const artist=item.fields.find(f=>['Artist','OwnerName','CameraOwnerName'].includes(f.key));
+  const location=item.fields.find(f=>f.key==='Location');
+
+  let gpsVal='Not found';
+  let gpsMapLink='';
+  if(item.gpsDecimal){
+    gpsVal=`${item.gpsDecimal.lat}, ${item.gpsDecimal.lng}`;
+    gpsMapLink=`<a class="map-link" href="https://maps.google.com/?q=${item.gpsDecimal.lat},${item.gpsDecimal.lng}" target="_blank">↗ view map</a>`;
+  } else if(gpsLat&&gpsLng){
+    gpsVal=`${gpsLat.val} / ${gpsLng.val}`;
+  } else if(location&&location.val&&location.val!=='[GPS present]'){
+    gpsVal=location.val;
+  }
+
+  const deviceVal=(make||model)? [make?.val,model?.val].filter(Boolean).join(' '):'Not found';
+  const serialVal=serial?serial.val:'Not found';
+  const dtVal=dt?dt.val:'Not found';
+  const swVal=software?software.val:'Not found';
+  const ownerVal=artist?artist.val:'Not found';
+
+  const summaryCards=[
+    {label:'GPS Location',val:gpsVal,extra:gpsMapLink,found:gpsVal!=='Not found'},
+    {label:'Device / Camera',val:deviceVal,found:deviceVal!=='Not found'},
+    {label:'Serial Number',val:serialVal,found:serialVal!=='Not found'},
+    {label:'Timestamp',val:dtVal,found:dtVal!=='Not found'},
+    {label:'Software',val:swVal,found:swVal!=='Not found'},
+    {label:'Owner / Artist',val:ownerVal,found:ownerVal!=='Not found'},
+  ];
+
+  let html='<div class="sensitive-grid">';
+  for(const c of summaryCards){
+    html+=`<div class="sens-card${c.found?' found':''}">
+      <div class="sens-card-label">${c.label}</div>
+      <div class="sens-card-val${c.found?'':' none'}">${c.val}${c.extra||''}</div>
+    </div>`;
+  }
+  html+='</div>';
+
+  // All fields table
+  html+=`<div class="meta-section">
+    <div class="meta-title">
+      <span>All fields (${totalFields}) — check to remove</span>
+      <span>
+        <span class="sel-all" onclick="selectAll('${item.id}',true)">all</span>
+        &nbsp;/&nbsp;
+        <span class="sel-all" onclick="selectAll('${item.id}',false)">none</span>
+        &nbsp;/&nbsp;
+        <span class="sel-all" onclick="selectSensitive('${item.id}')">sensitive only</span>
+      </span>
+    </div>`;
+
+  item.fields.forEach((f,i)=>{
+    html+=`<div class="field-row${f.sensitive?' is-sensitive':''}">
+      ${f.sensitive?'<div class="sens-dot"></div>':'<div style="width:5px;flex-shrink:0"></div>'}
+      <input type="checkbox" class="field-check" id="chk-${item.id}-${i}" ${f.checked?'checked':''} onchange="toggleField('${item.id}',${i},this.checked)">
+      <label class="field-label${f.sensitive?' sensitive':''}" for="chk-${item.id}-${i}">${f.key}</label>
+      <span class="field-val${f.sensitive?' sensitive':''}" title="${f.val}">${f.val}</span>
+    </div>`;
+  });
+  html+='</div>';
+
+  html+=`<div class="action-bar">
+    <button class="btn btn-primary" onclick="processFile('${item.id}')" id="proc-${item.id}">Strip checked fields</button>
+    <button class="btn btn-ghost" onclick="removeCard('${item.id}')">Remove</button>
+    <span id="dl-${item.id}" style="margin-left:auto"></span>
+  </div>`;
+
+  body.innerHTML=html;
+  // Auto-open so user sees data
+  body.classList.add('open');
+  document.getElementById('chev-'+item.id).style.transform='rotate(90deg)';
+}
+
+function toggleField(id,i,val){
+  const item=queue.find(q=>q.id===id);
+  if(item) item.fields[i].checked=val;
+}
+function selectAll(id,val){
+  const item=queue.find(q=>q.id===id);
+  if(!item) return;
+  item.fields.forEach((f,i)=>{f.checked=val;const c=document.getElementById(`chk-${id}-${i}`);if(c)c.checked=val;});
+}
+function selectSensitive(id){
+  const item=queue.find(q=>q.id===id);
+  if(!item) return;
+  item.fields.forEach((f,i)=>{f.checked=f.sensitive;const c=document.getElementById(`chk-${id}-${i}`);if(c)c.checked=f.sensitive;});
+}
+function removeCard(id){
+  queue=queue.filter(q=>q.id!==id);
+  const el=document.getElementById(id);if(el)el.remove();
+}
+
+async function processFile(id){
+  const item=queue.find(q=>q.id===id);if(!item) return;
+  const btn=document.getElementById('proc-'+id);
+  if(btn){btn.disabled=true;btn.textContent='Stripping…';}
+  try{
+    const blob=isImg(item.file)?await stripImg(item.file):await stripVid(item.file);
+    const name=item.file.name.replace(/(\.[^.]+)$/,'_clean$1');
+    const url=URL.createObjectURL(blob);
+    const dl=document.getElementById('dl-'+id);
+    if(dl) dl.innerHTML=`<a class="dl-link" href="${url}" download="${name}">↓ ${name}</a>`;
+    const badge=document.getElementById('badge-'+id);
+    if(badge){badge.className='status-badge badge-clean';badge.textContent='✓ stripped';}
+    if(btn){btn.disabled=false;btn.textContent='Strip again';}
+  }catch(e){if(btn){btn.disabled=false;btn.textContent='Error — retry';}}
+}
+
+async function stripImg(file){
+  return new Promise((res,rej)=>{
+    const img=new Image();const url=URL.createObjectURL(file);
+    img.onload=()=>{
+      const c=document.createElement('canvas');
+      c.width=img.naturalWidth;c.height=img.naturalHeight;
+      c.getContext('2d').drawImage(img,0,0);
+      URL.revokeObjectURL(url);
+      const mime=file.type==='image/png'?'image/png':file.type==='image/webp'?'image/webp':'image/jpeg';
+      c.toBlob(b=>b?res(b):rej(),mime,0.95);
+    };
+    img.onerror=rej;img.src=url;
+  });
+}
+async function stripVid(file){
+  const buf=await file.arrayBuffer();
+  const arr=new Uint8Array(buf);
+  if(file.name.toLowerCase().match(/\.(mp4|mov|m4v)$/)){
+    return new Blob([stripMp4(arr)],{type:file.type||'video/mp4'});
+  }
+  return new Blob([arr],{type:file.type});
+}
+function stripMp4(arr){
+  const dv=new DataView(arr.buffer);
+  const chunks=[];let i=0;
+  while(i+8<=arr.length){
+    const size=dv.getUint32(i,false);if(size<8||i+size>arr.length) break;
+    const t=String.fromCharCode(arr[i+4],arr[i+5],arr[i+6],arr[i+7]);
+    if(t==='moov') chunks.push(stripMoov(arr.slice(i,i+size)));
+    else chunks.push(arr.slice(i,i+size));
+    i+=size;
+  }
+  const total=chunks.reduce((s,c)=>s+c.length,0);
+  const out=new Uint8Array(total);let off=0;
+  for(const c of chunks){out.set(c,off);off+=c.length;}
+  return out;
+}
+function stripMoov(moov){
+  const dv=new DataView(moov.buffer,moov.byteOffset);
+  const keep=[moov.slice(0,8)];let i=8;
+  while(i+8<=moov.length){
+    const size=dv.getUint32(i,false);if(size<8||i+size>moov.length) break;
+    const t=String.fromCharCode(moov[i+4],moov[i+5],moov[i+6],moov[i+7]);
+    if(t!=='udta'&&t!=='meta'&&t!=='XMP_'&&t!=='©xyz'&&t!=='loci') keep.push(moov.slice(i,i+size));
+    i+=size;
+  }
+  const total=keep.slice(1).reduce((s,c)=>s+c.length,0)+8;
+  const out=new Uint8Array(total);const odv=new DataView(out.buffer);
+  odv.setUint32(0,total,false);out[4]=109;out[5]=111;out[6]=111;out[7]=118;
+  let off=8;for(const c of keep.slice(1)){out.set(c,off);off+=c.length;}
+  return out;
+}
+</script>
